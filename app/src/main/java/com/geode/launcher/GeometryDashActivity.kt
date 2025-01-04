@@ -350,7 +350,7 @@ class GeometryDashActivity : AppCompatActivity(), Cocos2dxHelper.Cocos2dxHelperL
 
                 if (copiedGeodePath.exists()) {
                     println("Loading Geode from ${externalGeodePath.name}")
-                    System.load(copideGeodePath.path)
+                    System.load(copiedGeodePath.path)
                     return
                 }
             }
