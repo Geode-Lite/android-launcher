@@ -33,14 +33,14 @@ class ReleaseRepository(private val httpClient: OkHttpClient) {
     }
 
     suspend fun getLatestGeodeRelease(): Release? {
-        val releasePath = "$GITHUB_API_BASE/repos/geode-sdk/geode/releases/latest"
+        val releasePath = "$GITHUB_API_BASE/repos/MuhXd/geode-lite-repo/releases/latest"
         val url = URL(releasePath)
 
         return getReleaseByUrl(url)
     }
 
     suspend fun getReleaseByTag(tag: String): Release? {
-        val releasePath = "$GITHUB_API_BASE/repos/geode-sdk/geode/releases/tags/$tag"
+        val releasePath = "$GITHUB_API_BASE/repos/MuhXd/geode-lite-repo/releases/tags/$tag"
         val url = URL(releasePath)
 
         return getReleaseByUrl(url)
@@ -48,7 +48,7 @@ class ReleaseRepository(private val httpClient: OkHttpClient) {
 
     @OptIn(ExperimentalSerializationApi::class)
     suspend fun getLatestGeodePreRelease(): Release? {
-        val releasesUrl = "$GITHUB_API_BASE/repos/geode-sdk/geode/releases?per_page=2"
+        val releasesUrl = "$GITHUB_API_BASE/repos/MuhXd/geode-lite-repo/releases?per_page=2"
         val url = URL(releasesUrl)
 
         val request = Request.Builder()
