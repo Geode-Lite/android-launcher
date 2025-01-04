@@ -350,7 +350,7 @@ class GeometryDashActivity : AppCompatActivity(), Cocos2dxHelper.Cocos2dxHelperL
 
                 if (copiedGeodePath.exists()) {
                     println("Loading Geode from ${externalGeodePath.name}")
-                    System.load(copiedGeodePath.path)
+                    System.load(copideGeodePath.path)
                     return
                 }
             }
@@ -559,31 +559,91 @@ class GeometryDashActivity : AppCompatActivity(), Cocos2dxHelper.Cocos2dxHelperL
      * Copies a mod from the launcher's assets to the Geode mods directory.
      * This method is not recommended for casual use, the new mod will not be automatically removed.
      */
-    private fun loadInternalMods() {
-        val internalModBase = "mods"
+private fun loadInternalMods() {
+    val internalModBase = "mods"
+    val modListing = try {
+        assets.list(internalModBase)
+    } catch (ioe: IOException) {
+        emptyArray<String>()
+    }
 
-        val modListing = try {
-            assets.list(internalModBase)
-        } catch (ioe: IOException) {
-            emptyArray<String>()
-        }
+    val modDirectory = File(
+        LaunchUtils.getBaseDirectory(this),
+        "game/geode/mods"
+    )
+    modDirectory.mkdirs()
 
-        val modDirectory = File(
-            LaunchUtils.getBaseDirectory(this),
-            "game/geode/mods"
-        )
-
-        modDirectory.mkdirs()
-
-        modListing?.forEach { fileName ->
-            if (fileName.endsWith(".geode")) {
-                val modOutput = File(modDirectory, fileName)
-
-                val mod = assets.open("$internalModBase/$fileName")
-                DownloadUtils.copyFile(mod, modOutput.outputStream())
-
-                println("Copied internal mod $fileName")
-            }
+    // Load internal mods from assets
+    modListing?.forEach { fileName ->
+        if (fileName.endsWith(".geode")) {
+            val modOutput = File(modDirectory, fileName)
+            val mod = assets.open("$internalModBase/$fileName")
+            DownloadUtils.copyFile(mod, modOutput.outputStream())
+            println("Copied internal mod $fileName")
         }
     }
+
+    // Handle external GitHub mod
+    val githubModUrl = "https://github.com/MuhXd/Brainrot-List-Ingame/releases/download/v1.1.0/viper.br_list.geode"
+    val githubModFileName = "gdlite.geode"
+    val cachedModFile = File(modDirectory, githubModFileName)
+
+    try {
+        val tempModFile = File.createTempFile("temp_", ".geode")
+
+        // Download the file to a temporary location
+        try {
+            println("Downloading mod $githubModFileName")
+            URL(githubModUrl).openStream().use { input ->
+                FileOutputStream(tempModFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // Compute hashes for comparison
+            val remoteFileHash = computeFileHash(tempModFile)
+            val localFileHash = if (cachedModFile.exists()) computeFileHash(cachedModFile) else null
+
+            // Check if the file has changed
+            if (localFileHash == remoteFileHash) {
+                println("Cached mod $githubModFileName is up-to-date (hash match)")
+            } else {
+                println("Updating mod $githubModFileName")
+                // Copy the downloaded file to the mod directory
+                tempModFile.inputStream().use { input ->
+                    cachedModFile.outputStream().use { output ->
+                        DownloadUtils.copyFile(input, output)
+                    }
+                }
+                println("Updated mod $githubModFileName")
+            }
+        } finally {
+            // Clean up the temporary file
+            tempModFile.delete()
+        }
+    } catch (e: IOException) {
+        println("Failed to download mod: ${e.message}")
+        if (cachedModFile.exists()) {
+            println("Using cached mod $githubModFileName (fallback)")
+        } else {
+            println("No mod available: $githubModFileName")
+        }
+    }
+}
+
+// Helper function to compute the hash of a file
+private fun computeFileHash(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().use { input ->
+        val buffer = ByteArray(1024)
+        var bytesRead: Int
+        while (input.read(buffer).also { bytesRead = it } != -1) {
+            digest.update(buffer, 0, bytesRead)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it) }
+}
+
+
+
 }
